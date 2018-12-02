@@ -6,16 +6,16 @@ import java.net.ServerSocket;
 import java.util.*;
 import java.io.FileReader;
 import java.io.FileWriter;
-
+import java.io.File;
 
 
 public class GameServer {
 	
 	private static HashMap<String, String> ID_PW_List = new HashMap<String, String>(); // list of IDs and PWs
-	private static final int initial_cash = 5000000; // amount of given cash at the beginning of the game
-	private static final int initial_loan = 10000000; // amount of assigned amount of loan at the beginning of the game
+	private static final int initial_cash = 500; // amount of given cash at the beginning of the game. 1 indicates 10 thousands
+	private static final int initial_loan = 500; // amount of assigned amount of loan at the beginning of the game. 1 indicates 10 thousands
 	private static final int initial_satiety = 100; // amount of satiety parameter at the beginning of the game
-	private static final int initial_mental = 100; // amount of mental parameter at the beginning of the game
+	private static final int initial_patience = 100; // amount of Zhang Chen's patience parameter at the beginning of the game.
 
 	
 	// the server uses port 9001 only
@@ -105,22 +105,37 @@ public class GameServer {
 				out = new PrintWriter(socket.getOutputStream(), true);
 				String inFromClient; // the String which is sent from the client
 				int borderIndex1; // border of the client's message (index of '/' letter in the message)
+				int intBuffer;
+				String stringBuffer;
+				
+				Scanner fileReader;
+				PrintWriter fileWriter;
+				
+				
+				
+				
 				
 				String ID; // ID buffer
 				String password; // password buffer
+				
+				String curUserID = ""; // this user's ID
+				int curUserCash = 1; // this user's cash amount
+				int curUserLoan = 1; // this user's loan amount
+				int curUserSatiety = 1; // this user's satiety
+				int curUserPatience = 1; // this user's patience
 				
 				
 				while(true)
 				{
 					inFromClient = in.readLine(); // read the message from the client
-					if (inFromClient == null)
+					if (inFromClient == null) // there was no message from the client
 					{
 						continue;
 					}
 					
 					
-					// every server-client communication protocols are here
-					if (inFromClient.startsWith("login/")) // client requests login
+					// every server-client communication protocols are here!!!!
+					else if (inFromClient.startsWith("login/")) // client requests login
 					{
 						// structure of the message from client
 						// login/(ID)/(password)
@@ -146,6 +161,20 @@ public class GameServer {
 								{
 									// successfully logged in
 									out.println("yes");
+									
+									
+									// load parameters from the user profile
+									fileReader = new Scanner(new File(ID + ".dat"));
+									
+									curUserID = new String(ID);
+									curUserCash = fileReader.nextInt();
+									curUserLoan = fileReader.nextInt();
+									curUserSatiety = fileReader.nextInt();
+									curUserPatience = fileReader.nextInt();
+									
+									
+									fileReader.close();
+									
 									
 									break;
 								}
@@ -201,10 +230,100 @@ public class GameServer {
 							outputStream.println(initial_cash);
 							outputStream.println(initial_loan);
 							outputStream.println(initial_satiety);
-							outputStream.println(initial_mental);
+							outputStream.println(initial_patience);
 							outputStream.close();
 						}
 					}
+					
+					
+					
+					
+					else if(inFromClient.startsWith("changeCash/")) // change the amount of current cash - client requested this
+					{
+						stringBuffer = inFromClient.substring(11);
+						intBuffer = Integer.valueOf(stringBuffer);
+						
+						curUserCash += intBuffer;
+						if (curUserCash < 0) // cash cannot be below 0
+						{
+							curUserCash = 0;
+						}
+					}
+					else if(inFromClient.startsWith("changeLoan/")) // change the amount of current loan - client requested this
+					{
+						stringBuffer = inFromClient.substring(11);
+						intBuffer = Integer.valueOf(stringBuffer);
+						
+						curUserLoan += intBuffer;
+						
+					}
+					else if(inFromClient.startsWith("changeSatiety/")) // change the amount of current satiety - client requested this
+					{
+						stringBuffer = inFromClient.substring(14);
+						intBuffer = Integer.valueOf(stringBuffer);
+						
+						curUserSatiety += intBuffer;
+						if (curUserSatiety < 0) // game over of hunger - inform this to the client
+						{
+							
+							out.println("gameOver");
+						}
+						else // not game over
+						{
+							out.println("okay");
+						}
+					}
+					else if(inFromClient.startsWith("changePatience/")) // change the amount of patience of Zhang Chen (limit for repaying the loan) - client requested this
+					{
+						stringBuffer = inFromClient.substring(15);
+						intBuffer = Integer.valueOf(stringBuffer);
+						
+						curUserPatience += intBuffer;
+						if (curUserPatience < 0) // game over of Zhang's impatience - inform this to the client
+						{
+							// game over by Zhang Chen
+							out.println("gameOver");
+						}
+						else // not game over
+						{
+							out.println("okay");
+						}
+					}
+					else if(inFromClient.startsWith("getCashAmount/")) // client requested the amount of current cash - inform that information to the client
+					{
+						out.println(curUserCash);
+					}
+					else if(inFromClient.startsWith("getLoanAmount/")) // client requested the amount of current loan - inform that information to the client
+					{
+						out.println(curUserLoan);
+					}
+					else if(inFromClient.startsWith("getSatietyAmount/")) // client requested the amount of current satiety - inform that information to the client
+					{
+						out.println(curUserSatiety);
+					}
+					else if(inFromClient.startsWith("getPatienceAmount/")) // client requested the amount of current patience - inform that information to the client
+					{
+						out.println(curUserPatience);
+					}
+					else if(inFromClient.startsWith("save/")) // save all current user parameters to the user's file((User ID).dat) 
+					{
+						fileWriter = new PrintWriter (curUserID + ".dat");
+						
+						fileWriter.println(curUserCash);
+						fileWriter.println(curUserLoan);
+						fileWriter.println(curUserSatiety);
+						fileWriter.println(curUserPatience);
+						
+						fileWriter.close();
+					}
+					
+					
+					else // unknown message received
+					{
+						System.out.println("Undefined message from a client");
+					}
+					
+					
 					
 					
 				}
@@ -225,5 +344,3 @@ public class GameServer {
 		}
 	}
 }
-
-
