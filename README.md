@@ -8,6 +8,6 @@ Term project of 'computer network and practice' subject.
 201533642 / Park Gisung / 96sean@naver.com
 
 
--Notice
+-Notice  
 This program needs ID_PW_List.dat file to be in the project folder to run.
 This file can be empty at first time. This file is used to manage all user's IDs and passwords.
